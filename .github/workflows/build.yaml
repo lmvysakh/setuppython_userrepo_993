@@ -1,5 +1,5 @@
 ---
-name: KSSO
+name: KSSO with forked repo
 on:
   push:
     paths:
@@ -8,7 +8,7 @@ on:
       - poetry.lock
       - pyproject.toml
     branches:
-      - main
+      - feature/add-gha
   pull_request:
     paths:
       - .github/workflows/build.yaml
