@@ -39,12 +39,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        run: echo "Checked out code"
       - name: Set up python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-        run: echo "Set up Python ${{ matrix.python-version }}"
       - name: Cache poetry dependencies
         id: cache
         uses: actions/cache@v3
@@ -56,7 +54,6 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-poetry-
-        run: echo "Checked cache for poetry dependencies"
       - name: Install poetry
         run: |
           echo "Installing poetry..."
@@ -99,7 +96,6 @@ jobs:
         with:
           name: ksso-${{ matrix.os }}-${{ env.version }}
           path: dist/ksso*
-        run: echo "Uploaded artifact"
 
   # ┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
   # │   RELEASE JOB                                                                                                      │
@@ -121,12 +117,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        run: echo "Checked out code"
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: dist
-        run: echo "Downloaded artifacts"
       - name: Rename artifacts for the release
         run: |
           echo "Renaming artifacts for the release..."
@@ -148,7 +142,6 @@ jobs:
           release_name: ksso v${{ needs.build.outputs.version }}
           draft: false
           prerelease: false
-        run: echo "Created release"
       - name: Upload release files
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
