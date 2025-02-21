@@ -39,10 +39,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        run: echo "Checked out code"
       - name: Set up python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+        run: echo "Set up Python ${{ matrix.python-version }}"
       - name: Cache poetry dependencies
         id: cache
         uses: actions/cache@v3
@@ -51,44 +53,53 @@ jobs:
             ~/.cache/pypoetry
             ~/Library/Caches/pypoetry
             C:\Users\runneradmin\AppData\Local\pypoetry\Cache
-          key: ${{ runner.os }}-${{ runner.arch }}-poetry-${{ hashFiles('**/poetry.lock')
-            }}
+          key: ${{ runner.os }}-${{ runner.arch }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-poetry-
+        run: echo "Checked cache for poetry dependencies"
       - name: Install poetry
         run: |
+          echo "Installing poetry..."
           python -m pip install poetry
           pip install pyinstaller
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-ansi
+        run: |
+          echo "Installing dependencies..."
+          poetry install --no-interaction --no-ansi
       - name: Determine version
         id: version
         run: |
+          echo "Determining version..."
           version=$(poetry version --short)
           echo "version=$version" >> $GITHUB_ENV
           echo "::set-output name=version::$version"
+          echo "Version determined: $version"
         shell: bash
       - name: Build binary with pyinstaller
         run: |
+          echo "Building binary with pyinstaller..."
           source $GITHUB_ENV
-          os_name=$(echo ${{ runner.os }}   | tr '[:upper:]' '[:lower:]')
+          os_name=$(echo ${{ runner.os }} | tr '[:upper:]' '[:lower:]')
           os_arch=$(echo ${{ runner.arch }} | tr '[:upper:]' '[:lower:]')
+          echo "OS: $os_name, Arch: $os_arch, Version: $version"
           if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             poetry run pyinstaller --add-data "ksso/success_message.html:ksso" --onefile ksso/main.py --name ksso-$os_name-$os_arch-$version
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            poetry run pyinstaller   --target-architecture universal2 --add-data "ksso/success_message.html:ksso" --onefile ksso/main.py --name ksso-$os_name-$os_arch-$version
+            poetry run pyinstaller --target-architecture universal2 --add-data "ksso/success_message.html:ksso" --onefile ksso/main.py --name ksso-$os_name-$os_arch-$version
           elif [[ "${{ matrix.os }}" == "macos-13" ]]; then
-            poetry run pyinstaller   --target-architecture x86_64 --add-data "ksso/success_message.html:ksso" --onefile ksso/main.py --name ksso-$os_name-$os_arch-$version
+            poetry run pyinstaller --target-architecture x86_64 --add-data "ksso/success_message.html:ksso" --onefile ksso/main.py --name ksso-$os_name-$os_arch-$version
           elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             poetry run pyinstaller --add-data "ksso/success_message.html;ksso" --onefile ksso/main.py --name ksso-$os_name-$os_arch-$version
           fi
+          echo "Binary built successfully"
         shell: bash
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ksso-${{ matrix.os }}-${{ env.version }}
           path: dist/ksso*
+        run: echo "Uploaded artifact"
 
   # ┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
   # │   RELEASE JOB                                                                                                      │
@@ -110,12 +121,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        run: echo "Checked out code"
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: dist
+        run: echo "Downloaded artifacts"
       - name: Rename artifacts for the release
         run: |
+          echo "Renaming artifacts for the release..."
           dist_path="dist"
           for subdir in "$dist_path"/*; do
             if [ -d "$subdir" ]; then
@@ -124,6 +138,7 @@ jobs:
             fi
           done
           ls -la "$dist_path"
+          echo "Artifacts renamed"
       - name: Create release
         uses: actions/create-release@v1
         env:
@@ -133,11 +148,14 @@ jobs:
           release_name: ksso v${{ needs.build.outputs.version }}
           draft: false
           prerelease: false
+        run: echo "Created release"
       - name: Upload release files
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |-
+        run: |
+          echo "Uploading release files..."
           version=${{ needs.build.outputs.version }}
           for file in $(ls dist/); do
             gh release upload v${version} dist/$file --clobber
           done
+          echo "Release files uploaded"
