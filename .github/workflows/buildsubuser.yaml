@@ -1,4 +1,4 @@
-name: Build with PyInstaller
+name: Build with Subuser workflow
 
 on:
   push:
